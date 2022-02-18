@@ -1,3 +1,4 @@
+from torch import dropout
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
@@ -7,16 +8,14 @@ import  pandas as pd
 import  os
 from keras.models import Sequential, load_model
 from sklearn.preprocessing import MinMaxScaler
+from keras.layers import Dropout
 
+# 改
+# df = pd.read_csv('../LBMA-GOLD.csv', engine='python', skipfooter=3)
+df = pd.read_csv('../BCHAIN-MKPRU.csv', engine='python', skipfooter=3)
 
-dataframe = pd.read_csv('../BCHAIN-MKPRU.csv', usecols=[1], engine='python', skipfooter=3)
-dataset = dataframe.values
-
-plt.figure()
-plt.plot(dataset,'g-',label='dwell')
-plt.legend(loc='best')
-plt.savefig('1.png')
-plt.close()
+dataset = df.iloc[:,1].values
+dataset=np.reshape(dataset,(len(dataset),-1))
 
 # 将整型变为float
 dataset = dataset.astype('float32')
@@ -24,12 +23,14 @@ dataset = dataset.astype('float32')
 scaler = MinMaxScaler(feature_range=(0, 1))
 dataset = scaler.fit_transform(dataset)
 
-train_size = int(len(dataset) * 0.9)
+train_size = int(len(dataset)*0.9)
+# train_size =1000
 trainlist = dataset[:train_size]
-testlist = dataset[train_size:]
+# 改
+testlist=dataset[100:]
+# testlist = dataset[train_size:]
 
 def create_dataset(dataset, timestep):
-#这里的look_back与timestep相同
     dataX, dataY = [], []
     for i in range(len(dataset)-timestep-1):
         a = dataset[i:(i+timestep)]
@@ -46,32 +47,48 @@ testX = np.reshape(testX, (testX.shape[0], testX.shape[1] ,1 ))
 
 # create and fit the LSTM network
 model = Sequential()
-model.add(LSTM(4, input_shape=(None,1)))
-model.add(Dense(1))
+# model.add(Dropout(0.2, input_shape=(None,1,)))
+model.add(LSTM(12, input_shape=(None,1),dropout=0.05))
+model.add(Dense(1,activation='elu'))
 model.compile(loss='mean_squared_error', optimizer='adam')
-# model.fit(trainX, trainY, epochs=100, batch_size=100, verbose=2)
-# model.save(os.path.join("DATA","Test" + ".h5"))
+# 训练模型
+# 改
+# model = load_model(os.path.join("DATA","LSTM_gold" + ".h5"))
+# model = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
+model.fit(trainX, trainY, epochs=500, batch_size=100, verbose=2)
+# a=1
+# 改
+model.save(os.path.join("DATA","LSTM_bit" + ".h5"))
+# model.save(os.path.join("DATA","LSTM_gold" + ".h5"))
+
 # make predictions
 
-model = load_model(os.path.join("DATA","Test" + ".h5"))
-trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
 
-#反归一化
-# trainPredict = scaler.inverse_transform(trainPredict)
-# trainY = scaler.inverse_transform(trainY)
+#反归一化，获得结果图片
+
 testPredict = scaler.inverse_transform(testPredict).tolist()
-# testY = scaler.inverse_transform(testY)
+value=dataset[:len(dataset)-len(testPredict)]
+value=scaler.inverse_transform(value).tolist()
+value=value+testPredict
 
-trainlist=scaler.inverse_transform(trainlist).tolist()
+date=df.iloc[:len(value),0].values.tolist()
 
-for i in range(len(testPredict)):
-    trainlist.append(testPredict[i])
+real_value=scaler.inverse_transform(dataset).tolist()
 
-plt.figure()
-plt.plot(trainlist,'g-',label='dwell',color='red')
-plt.legend(loc='best')
-plt.savefig('2.png')
+dic={'Date':np.reshape(date,(len(date))),'predict value':np.reshape(value,(len(value))),
+'real value':np.reshape(real_value,(len(real_value))) }
+# 改
+# pd.DataFrame(dic).to_csv('../result/黄金趋势(100天后).csv',index=False)
+pd.DataFrame(dic).to_csv('../result/比特币趋势(100天后).csv',index=False)
+
+
+
+# plt.figure()
+# plt.plot(trainlist,'g-',label='dwell',color='red')
+# plt.legend(loc='best')
+# plt.savefig('2.png')
+
 
 
 
