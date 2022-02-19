@@ -1,21 +1,14 @@
-from turtle import shape
 
-from numpy import var
-from problem1_al import VaR, create_dataset, format_date, get_LSTM_model, get_train_and_test_set,predict_future
-from torch import dropout
+from problem1_al import VaR,  format_date,predict_future
 import numpy as np
-import matplotlib.pyplot as plt
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
 import  pandas as pd
 import  os
 from keras.models import Sequential, load_model
 from sklearn.preprocessing import MinMaxScaler
-from keras.layers import Dropout
 
 
 
+# if __name__ =='__main__':
 # 投资，得到利润，还有买入卖出的时间点
 # 以30天为一个周期，从第30天开始
 time_step=30
@@ -62,12 +55,13 @@ data_VaR_gold,data_VaR_bit = data_VaR_gold.astype('float32'),data_VaR_bit.astype
 # 超参数alpha
 alpha=0.6
 while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
-    # 计算当前资产
-    money.append(status[0]+status[1]*test_VaR_gold[len(test_VaR_gold)-1]+status[2]*test_VaR_bit[len(test_VaR_bit)-1])
-
     test_LSTM_bit,test_VaR_bit=data_LSTM_bit[bit_p-30:bit_p],data_VaR_bit[bit_p-30:bit_p]
     var1=gold_p if gold_p<101 else 101
     test_LSTM_gold,test_VaR_gold=data_LSTM_gold[gold_p-var1:gold_p],data_VaR_gold[gold_p-var1:gold_p]
+
+
+        # 计算当前资产
+    money.append(status[0]+status[1]*test_VaR_gold[len(test_VaR_gold)-1]+status[2]*test_VaR_bit[len(test_VaR_bit)-1])
     if is_gold_buy and  (not is_bit_buy):
         if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
             bit_p+=1
@@ -185,7 +179,8 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         f_gold=alpha*p1_gold+(1-alpha)*p2_gold-z_gold
         is_buy_gold=status[0]*0.99>test_VaR_gold[len(test_VaR_gold)-1]
         if f_bit<0 and f_gold<0:
-            f_bit,f_gold=f_bit+1,f_gold+1
+            bit_p+=1
+            gold_p+=1
             continue
 
         if f_gold>f_bit and is_buy_gold:
