@@ -52,7 +52,7 @@ def get_LSTM_model():
 
 # data是1*n的ndarray向量
 def VaR(data,c=0.7):
-    data=data if len(data)<=101 else data[len(data)-101:]
+    data=data if len(data)<=31 else data[len(data)-31:]
     sub=np.array([data[i+1]-data[i] for i in range(len(data)-1)])
     sub_sort=np.sort(sub,axis=0)
     return sub_sort[int(len(sub)*(1-c))]
@@ -76,3 +76,30 @@ def get_result(predict_days,LSTM_data,VaR_data,model,scaler,z,alpha=0.6):
     p2_bit=VaR(VaR_data,c=0.7)/VaR_data[len(VaR_data)-1]*predict_days
     f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z
     return f_bit
+
+# 0是买黄金，1是卖黄金，2是买比特币，3是卖比特币
+#按顺序返回is_bit_buy,is_gold_buy,status
+def investment(state,buy_list,status,value,date):
+    is_bit_buy,is_gold_buy=False,False
+    st=state
+    if st==0:
+        buy_list.append('buy gold {}'.format(date))
+        is_gold_buy=True
+        status[1]=int(status[0]*0.99/value)
+        status[0]-=status[1]*value*1.01
+    elif st==1: 
+        buy_list.append('sell gold {}'.format(date))
+        is_gold_buy=False
+        status[0]+=status[1]*value*0.99
+        status[1]=0
+    elif st==2:
+        buy_list.append('buy bit {}'.format(date))
+        is_bit_buy=True
+        status[2]=status[0]/value/1.02
+        status[0]=0
+    elif st==3:
+        buy_list.append('sell bit {}'.format(date))
+        is_bit_buy=False
+        status[0]+=status[2]*value*0.98
+        status[2]=0
+    return is_bit_buy,is_gold_buy,status

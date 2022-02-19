@@ -9,6 +9,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 for aaa in range(11):
     alpha=aaa/10
+    # if __name__ =='__main__':
     # 投资，得到利润，还有买入卖出的时间点
     # 以30天为一个周期，从第30天开始
     time_step=30
@@ -52,18 +53,21 @@ for aaa in range(11):
     data_VaR_gold,data_VaR_bit = df_gold.iloc[:,1].values,df_bit.iloc[:,1].values
     data_VaR_gold,data_VaR_bit = data_VaR_gold.astype('float32'),data_VaR_bit.astype('float32')
 
-    #让alpha从0到1的模板 
-
     # 准备工作完成，开始计算fg,fp
     # 超参数alpha
-    # alpha=0.5
+    alpha=0.6
+    temp=1000
     while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         test_LSTM_bit,test_VaR_bit=data_LSTM_bit[bit_p-30:bit_p],data_VaR_bit[bit_p-30:bit_p]
         var1=gold_p if gold_p<31 else 31
         test_LSTM_gold,test_VaR_gold=data_LSTM_gold[gold_p-var1:gold_p],data_VaR_gold[gold_p-var1:gold_p]
 
         # 计算当前资产
-        money.append(status[0]+0.99*status[1]*test_VaR_gold[len(test_VaR_gold)-1]+0.98*status[2]*test_VaR_bit[len(test_VaR_bit)-1])
+        var1=status[0]+0.99*status[1]*test_VaR_gold[len(test_VaR_gold)-1]+0.98*status[2]*test_VaR_bit[len(test_VaR_bit)-1]
+        money.append(var1)
+        if abs(var1-temp)>=10000:
+            alpha+=-0.05 if var1>temp else 0.05
+            temp=var1
         # 日期
         date.append(df_bit.iloc[bit_p,0])
 
@@ -131,7 +135,8 @@ for aaa in range(11):
 
     print('最终比例是{}'.format(status))
     dic={'record':np.reshape(buy_list,(len(buy_list)))}
-    pd.DataFrame(dic).to_csv('../result/交易记录(beta={}).csv'.format(alpha),index=False)
+    pd.DataFrame(dic).to_csv('../result/交易记录(beta={})dong.csv'.format(aaa/10),index=False)
 
     dic={'money':np.reshape(money,(len(money))),'date':np.reshape(date,(len(date)))}
-    pd.DataFrame(dic).to_csv('../result/资产(beta={}).csv'.format(alpha),index=False)
+    pd.DataFrame(dic).to_csv('../result/资产(beta={})dong.csv'.format(aaa/10),index=False)
+
