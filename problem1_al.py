@@ -55,7 +55,7 @@ def VaR(data,alpha=0.7):
     data=data if len(data)<=101 else data[len(data)-101:]
     sub=np.array([data[i+1]-data[i] for i in range(len(data)-1)])
     sub_sort=np.sort(sub,axis=0)
-    return sub_sort[int(len(sub)*(1-alpha))]
+    return sub_sort[int(len(sub)*alpha)]
 
 def format_date(df):
     for i in range(df.shape[0]):
@@ -65,6 +65,7 @@ def format_date(df):
                 df.iloc[i,0]=df.iloc[i,0][3:]
             else:
                 df.iloc[i,0]=df.iloc[i,0][2:]
+    df.iloc[:,0]=pd.to_datetime(df.iloc[:,0])
 
     return df
         

@@ -29,7 +29,8 @@ status=[1000,0,0]
 # 交易列表，包含时间，买卖，物品
 buy_list=[]
 # 资产
-money=[1000]
+money=[]
+date=[]
 
 
 df_bit = pd.read_csv('../BCHAIN-MKPRU.csv', engine='python', skipfooter=3)
@@ -60,8 +61,11 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
     test_LSTM_gold,test_VaR_gold=data_LSTM_gold[gold_p-var1:gold_p],data_VaR_gold[gold_p-var1:gold_p]
 
 
-        # 计算当前资产
-    money.append(status[0]+status[1]*test_VaR_gold[len(test_VaR_gold)-1]+status[2]*test_VaR_bit[len(test_VaR_bit)-1])
+    # 计算当前资产
+    money.append(status[0]+0.99*status[1]*test_VaR_gold[len(test_VaR_gold)-1]+0.98*status[2]*test_VaR_bit[len(test_VaR_bit)-1])
+    # 日期
+    date.append(df_bit.iloc[bit_p,0])
+
     if is_gold_buy and  (not is_bit_buy):
         if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
             bit_p+=1
@@ -92,6 +96,7 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
             status[0]=0
         elif f_gold<0:
             buy_list.append('sell gold {}'.format(df_gold.iloc[gold_p,0]))
+            is_gold_buy=False
             status[0]+=status[1]*test_VaR_gold[len(test_VaR_gold)-1]*0.99
             status[1]=0
         bit_p+=1
@@ -188,7 +193,7 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
             is_gold_buy=True
             status[1]=int(status[0]*0.99/test_VaR_gold[len(test_VaR_gold)-1])
             status[0]-=status[1]*test_VaR_gold[len(test_VaR_gold)-1]*1.01
-        elif f_bit>0 or f_bit>f_gold:
+        elif f_bit>f_gold:
             buy_list.append('buy bit {}'.format(df_bit.iloc[bit_p,0]))
             is_bit_buy=True
             status[2]+=status[0]/test_VaR_bit[len(test_VaR_bit)-1]/1.02
@@ -198,8 +203,8 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         continue
 
 print('最终比例是{}'.format(status))
-dic={'交易记录':np.reshape(buy_list,(len(buy_list)))}
-pd.DataFrame(dic).to_csv('../result/交易记录.csv',index=False)
+dic={'record':np.reshape(buy_list,(len(buy_list)))}
+pd.DataFrame(dic).to_csv('../result/交易记录(beta={}).csv'.format(alpha),index=False)
 
-dic={'资产变化':np.reshape(buy_list,(len(buy_list)))}
-pd.DataFrame(dic).to_csv('../result/资产.csv',index=False)
+dic={'money':np.reshape(money,(len(money))),'date':np.reshape(date,(len(date)))}
+pd.DataFrame(dic).to_csv('../result/资产(beta={}).csv'.format(alpha),index=False)
