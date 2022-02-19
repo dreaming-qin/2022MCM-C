@@ -76,12 +76,12 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
         p1_gold = scaler_gold.inverse_transform(p1_gold).tolist()
         # 获得的是列表，我们需要获得天数
-        days_bit,days_gold=p1_bit.index(max(p1_bit))+1,p1_gold.index(max(p1_gold))+1
-        p1_bit,p1_gold=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1,max(p1_gold)/test_VaR_gold[len(test_VaR_gold)-1]-1
+        days_bit,days_gold=predict_days,predict_days
+        p1_bit,p1_gold=p1_bit[predict_days-1]/test_VaR_bit[len(test_VaR_bit)-1]-1,p1_gold[predict_days-1]/test_VaR_gold[len(test_VaR_gold)-1]-1
         
         # VaR的p2分数
-        p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
-        p2_gold=VaR(test_VaR_gold,alpha=0.5)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
+        p2_bit=VaR(test_VaR_bit,c=0.7)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+        p2_gold=VaR(test_VaR_gold,c=0.7)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
 
         f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
         f_gold=alpha*p1_gold+(1-alpha)*p2_gold-z_gold
@@ -107,9 +107,9 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
             p1_bit=predict_future(predict_days,test_LSTM_bit,model_bit).tolist()
             p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
-            days_bit=p1_bit.index(max(p1_bit))+1
-            p1_bit=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1
-            p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+            days_bit=predict_days
+            p1_bit=p1_bit[predict_days-1]/test_VaR_bit[len(test_VaR_bit)-1]-1
+            p2_bit=VaR(test_VaR_bit,c=0.7)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
             f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
             if f_bit<0:
                 buy_list.append('sell bit {}'.format(df_bit.iloc[bit_p,0]))
@@ -124,12 +124,13 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
         p1_gold = scaler_gold.inverse_transform(p1_gold).tolist()
         # 获得的是列表，我们需要获得天数
-        days_bit,days_gold=p1_bit.index(max(p1_bit))+1,p1_gold.index(max(p1_gold))+1
-        p1_bit,p1_gold=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1,max(p1_gold)/test_VaR_gold[len(test_VaR_gold)-1]-1
+        days_bit,days_gold=predict_days,predict_days
+        p1_bit,p1_gold=p1_bit[predict_days-1]/test_VaR_bit[len(test_VaR_bit)-1]-1,p1_gold[predict_days-1]/test_VaR_gold[len(test_VaR_gold)-1]-1
+
         
         # VaR的p2分数
-        p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
-        p2_gold=VaR(test_VaR_gold,alpha=0.5)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
+        p2_bit=VaR(test_VaR_bit,c=0.7)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+        p2_gold=VaR(test_VaR_gold,c=0.7)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
 
         f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
         f_gold=alpha*p1_gold+(1-alpha)*p2_gold-z_gold
@@ -156,9 +157,9 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
             p1_bit=predict_future(predict_days,test_LSTM_bit,model_bit).tolist()
             p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
-            days_bit=p1_bit.index(max(p1_bit))+1
-            p1_bit=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1
-            p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+            days_bit=predict_days
+            p1_bit=p1_bit[predict_days-1]/test_VaR_bit[len(test_VaR_bit)-1]-1
+            p2_bit=VaR(test_VaR_bit,c=0.7)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
             f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
             if f_bit>0:
                 buy_list.append('buy bit {}'.format(df_bit.iloc[bit_p,0]))
@@ -173,12 +174,12 @@ while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
         p1_gold = scaler_gold.inverse_transform(p1_gold).tolist()
         # 获得的是列表，我们需要获得天数
-        days_bit,days_gold=p1_bit.index(max(p1_bit))+1,p1_gold.index(max(p1_gold))+1
-        p1_bit,p1_gold=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1,max(p1_gold)/test_VaR_gold[len(test_VaR_gold)-1]-1
+        days_bit,days_gold=predict_days,predict_days
+        p1_bit,p1_gold=p1_bit[predict_days-1]/test_VaR_bit[len(test_VaR_bit)-1]-1,p1_gold[predict_days-1]/test_VaR_gold[len(test_VaR_gold)-1]-1
         
         # VaR的p2分数
-        p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
-        p2_gold=VaR(test_VaR_gold,alpha=0.5)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
+        p2_bit=VaR(test_VaR_bit,c=0.7)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+        p2_gold=VaR(test_VaR_gold,c=0.7)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
 
         f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
         f_gold=alpha*p1_gold+(1-alpha)*p2_gold-z_gold

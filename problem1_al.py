@@ -51,11 +51,11 @@ def get_LSTM_model():
     return model
 
 # data是1*n的ndarray向量
-def VaR(data,alpha=0.7):
+def VaR(data,c=0.7):
     data=data if len(data)<=101 else data[len(data)-101:]
     sub=np.array([data[i+1]-data[i] for i in range(len(data)-1)])
     sub_sort=np.sort(sub,axis=0)
-    return sub_sort[int(len(sub)*alpha)]
+    return sub_sort[int(len(sub)*(1-c))]
 
 def format_date(df):
     for i in range(df.shape[0]):
@@ -68,5 +68,11 @@ def format_date(df):
     df.iloc[:,0]=pd.to_datetime(df.iloc[:,0])
 
     return df
-        
-    
+
+def get_result(predict_days,LSTM_data,VaR_data,model,scaler,z,alpha=0.6):
+    p1_bit=predict_future(predict_days,LSTM_data,model).tolist()
+    p1_bit = scaler.inverse_transform(p1_bit).tolist()
+    p1_bit=p1_bit[predict_days-1]/VaR_data[len(VaR_data)-1]-1
+    p2_bit=VaR(VaR_data,c=0.7)/VaR_data[len(VaR_data)-1]*predict_days
+    f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z
+    return f_bit
