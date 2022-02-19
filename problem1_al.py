@@ -57,6 +57,15 @@ def VaR(data,alpha=0.7):
     sub_sort=np.sort(sub,axis=0)
     return sub_sort[int(len(sub)*(1-alpha))]
 
+def format_date(df):
+    for i in range(df.shape[0]):
+        index=df.iloc[i,0].find('/')
+        if index>2:
+            if df.iloc[i,0][2]=='0':
+                df.iloc[i,0]=df.iloc[i,0][3:]
+            else:
+                df.iloc[i,0]=df.iloc[i,0][2:]
 
+    return df
         
     

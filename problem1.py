@@ -1,4 +1,7 @@
-from problem1_al import VaR, create_dataset, get_LSTM_model, get_train_and_test_set,predict_future
+from turtle import shape
+
+from numpy import var
+from problem1_al import VaR, create_dataset, format_date, get_LSTM_model, get_train_and_test_set,predict_future
 from torch import dropout
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,84 +16,195 @@ from keras.layers import Dropout
 
 
 
-# 改
-df = pd.read_csv('../LBMA-GOLD.csv', engine='python', skipfooter=3)
-# df = pd.read_csv('../BCHAIN-MKPRU.csv', engine='python', skipfooter=3)
+# 投资，得到利润，还有买入卖出的时间点
+# 以30天为一个周期，从第30天开始
+time_step=30
+# 预测15天
+predict_days=15
+# 在第三种状态
+is_gold_buy,is_bit_buy=False,False
+# 保证相同时间，一般来说，是黄金比比特币快，需要比特币跟上
+gold_p,bit_p=30,30
+z_gold,z_bit=0.0204,0.0413
+# 模型
+model_gold = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
+model_bit = load_model(os.path.join("DATA","LSTM_gold" + ".h5"))
 
-dataset = df.iloc[:,1].values
-dataset=np.reshape(dataset,(len(dataset),-1))
 
+# 三元组状态，现金，黄金，比特币
+status=[1000,0,0]
+# 交易列表，包含时间，买卖，物品
+buy_list=[]
+# 资产
+money=[1000]
+
+
+df_bit = pd.read_csv('../BCHAIN-MKPRU.csv', engine='python', skipfooter=3)
+df_gold = pd.read_csv('../LBMA-GOLD.csv', engine='python', skipfooter=3)
+df_bit,df_gold=format_date(df_bit),format_date(df_gold)
+
+# LSTM获得数据集
+data_LSTM_gold,data_LSTM_bit = df_gold.iloc[:,1].values,df_bit.iloc[:,1].values
+data_LSTM_gold=np.reshape(data_LSTM_gold,(len(data_LSTM_gold),-1))
+data_LSTM_bit=np.reshape(data_LSTM_bit,(len(data_LSTM_bit),-1))
 # 将整型变为float
-dataset = dataset.astype('float32')
-#归一化 在下一步会讲解
-scaler = MinMaxScaler(feature_range=(0, 1))
-# dataset = scaler.fit_transform(dataset)
+data_LSTM_gold,data_LSTM_bit = data_LSTM_gold.astype('float32'),data_LSTM_bit.astype('float32')
+#归一化
+scaler_bit = MinMaxScaler(feature_range=(0, 1))
+scaler_gold=MinMaxScaler(feature_range=(0, 1))
+data_LSTM_gold,data_LSTM_bit = scaler_gold.fit_transform(data_LSTM_gold),scaler_bit.fit_transform(data_LSTM_bit)
 
-# 获得训练集和测试集
-train_size = int(len(dataset)*0.9)
-#训练数据太少 timestep并不能过大
-timestep = 30
-trainX,trainY,testX,testY = get_train_and_test_set(dataset,train_size,timestep)
-trainX = np.reshape(trainX, (trainX.shape[0], trainX.shape[1], 1))
-testX = np.reshape(testX, (testX.shape[0], testX.shape[1] ,1 ))
+# VaR获得数据集
+data_VaR_gold,data_VaR_bit = df_gold.iloc[:,1].values,df_bit.iloc[:,1].values
+data_VaR_gold,data_VaR_bit = data_VaR_gold.astype('float32'),data_VaR_bit.astype('float32')
 
-# 创建LSTM
-model = get_LSTM_model()
+# 准备工作完成，开始计算fg,fp
+# 超参数alpha
+alpha=0.6
+while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
+    # 计算当前资产
+    money.append(status[0]+status[1]*test_VaR_gold[len(test_VaR_gold)-1]+status[2]*test_VaR_bit[len(test_VaR_bit)-1])
 
-# 训练模型
-# 改
-# model = load_model(os.path.join("DATA","LSTM_gold" + ".h5"))
-# model = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
-model.fit(trainX, trainY, epochs=4000, batch_size=100, verbose=2)
-# 改
-# model.save(os.path.join("DATA","LSTM_bit" + ".h5"))
-model.save(os.path.join("DATA","LSTM_gold" + ".h5"))
+    test_LSTM_bit,test_VaR_bit=data_LSTM_bit[bit_p-30:bit_p],data_VaR_bit[bit_p-30:bit_p]
+    var1=gold_p if gold_p<101 else 101
+    test_LSTM_gold,test_VaR_gold=data_LSTM_gold[gold_p-var1:gold_p],data_VaR_gold[gold_p-var1:gold_p]
+    if is_gold_buy and  (not is_bit_buy):
+        if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
+            bit_p+=1
+            continue
+        # LSTM的p1分数
+        p1_bit=predict_future(predict_days,test_LSTM_bit,model_bit).tolist()
+        p1_gold=predict_future(predict_days,test_LSTM_gold,model_gold).tolist()
+        p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
+        p1_gold = scaler_gold.inverse_transform(p1_gold).tolist()
+        # 获得的是列表，我们需要获得天数
+        days_bit,days_gold=p1_bit.index(max(p1_bit))+1,p1_gold.index(max(p1_gold))+1
+        p1_bit,p1_gold=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1,max(p1_gold)/test_VaR_gold[len(test_VaR_gold)-1]-1
+        
+        # VaR的p2分数
+        p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+        p2_gold=VaR(test_VaR_gold,alpha=0.5)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
 
+        f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
+        f_gold=alpha*p1_gold+(1-alpha)*p2_gold-z_gold
+        if f_bit-f_gold>0 and f_bit>0:
+            buy_list.append('sell gold {}'.format(df_gold.iloc[gold_p,0]))
+            is_gold_buy=False
+            buy_list.append('buy bit {}'.format(df_bit.iloc[bit_p,0]))
+            is_bit_buy=True
+            status[0]+=status[1]*test_VaR_gold[len(test_VaR_gold)-1]*0.99
+            status[1]=0
+            status[2]=status[0]/test_VaR_bit[len(test_VaR_bit)-1]/1.02
+            status[0]=0
+        elif f_gold<0:
+            buy_list.append('sell gold {}'.format(df_gold.iloc[gold_p,0]))
+            status[0]+=status[1]*test_VaR_gold[len(test_VaR_gold)-1]*0.99
+            status[1]=0
+        bit_p+=1
+        gold_p+=1
+        continue
 
-# 预测
-# 预测天数
-days=15
-# 从第几天开始
-start_day=30
-test=dataset[start_day-timestep:start_day]
-testPredict=predict_future(days,test,model).tolist()
-# testPredict = scaler.inverse_transform(testPredict).tolist()
-testPredict=np.reshape(df.iloc[:start_day,1].values,(start_day,1)).tolist()+testPredict
-date=df.iloc[:start_day+days,0].values.tolist()
-real_value=df.iloc[:start_day+days,1].values.tolist()
-dic={'Date':np.reshape(date,(len(date))),'predict value':np.reshape(testPredict,(len(testPredict))),
-'real value':np.reshape(real_value,(len(real_value))) }
-# 改
-pd.DataFrame(dic).to_csv('../result/黄金预测15天趋势.csv',index=False)
-# pd.DataFrame(dic).to_csv('../result/比特币预测15天趋势.csv',index=False)
+    if (not is_gold_buy) and is_bit_buy:
+        if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
+            p1_bit=predict_future(predict_days,test_LSTM_bit,model_bit).tolist()
+            p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
+            days_bit=p1_bit.index(max(p1_bit))+1
+            p1_bit=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1
+            p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+            f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
+            if f_bit<0:
+                buy_list.append('sell bit {}'.format(df_bit.iloc[bit_p,0]))
+                is_bit_buy=False
+                status[0]+=status[2]*test_VaR_bit[len(test_VaR_bit)-1]*0.98
+                status[2]=0
+            bit_p+=1
+            continue
+        # LSTM的p1分数
+        p1_bit=predict_future(predict_days,test_LSTM_bit,model_bit).tolist()
+        p1_gold=predict_future(predict_days,test_LSTM_gold,model_gold).tolist()
+        p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
+        p1_gold = scaler_gold.inverse_transform(p1_gold).tolist()
+        # 获得的是列表，我们需要获得天数
+        days_bit,days_gold=p1_bit.index(max(p1_bit))+1,p1_gold.index(max(p1_gold))+1
+        p1_bit,p1_gold=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1,max(p1_gold)/test_VaR_gold[len(test_VaR_gold)-1]-1
+        
+        # VaR的p2分数
+        p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+        p2_gold=VaR(test_VaR_gold,alpha=0.5)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
 
+        f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
+        f_gold=alpha*p1_gold+(1-alpha)*p2_gold-z_gold
+        is_buy_gold=(status[0]+status[2]*test_VaR_bit[len(test_VaR_bit)-1]*0.98)*0.99>test_VaR_gold[len(test_VaR_gold)-1]
+        if f_gold-f_bit>0 and is_buy_gold and f_gold>0:
+            buy_list.append('sell bit {}'.format(df_bit.iloc[bit_p,0]))
+            is_bit_buy=False
+            buy_list.append('buy gold {}'.format(df_gold.iloc[gold_p,0]))
+            is_gold_buy=True
+            status[0]+=status[2]*test_VaR_bit[len(test_VaR_bit)-1]*0.98
+            status[2]=0
+            status[1]=int(status[0]*0.99/test_VaR_gold[len(test_VaR_gold)-1])
+            status[0]-=status[1]*test_VaR_gold[len(test_VaR_gold)-1]*1.01
+        elif f_bit<0:
+            buy_list.append('sell bit {}'.format(df_bit.iloc[bit_p,0]))
+            is_bit_buy=False
+            status[0]+=status[2]*test_VaR_bit[len(test_VaR_bit)-1]*0.98
+            status[2]=0
+        bit_p+=1
+        gold_p+=1
+        continue
 
+    if (not is_gold_buy) and (not is_bit_buy):
+        if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
+            p1_bit=predict_future(predict_days,test_LSTM_bit,model_bit).tolist()
+            p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
+            days_bit=p1_bit.index(max(p1_bit))+1
+            p1_bit=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1
+            p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+            f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
+            if f_bit>0:
+                buy_list.append('buy bit {}'.format(df_bit.iloc[bit_p,0]))
+                is_bit_buy=True
+                status[2]=status[0]/test_VaR_bit[len(test_VaR_bit)-1]/1.02
+                status[0]=0
+            bit_p+=1
+            continue
+        # LSTM的p1分数
+        p1_bit=predict_future(predict_days,test_LSTM_bit,model_bit).tolist()
+        p1_gold=predict_future(predict_days,test_LSTM_gold,model_gold).tolist()
+        p1_bit = scaler_bit.inverse_transform(p1_bit).tolist()
+        p1_gold = scaler_gold.inverse_transform(p1_gold).tolist()
+        # 获得的是列表，我们需要获得天数
+        days_bit,days_gold=p1_bit.index(max(p1_bit))+1,p1_gold.index(max(p1_gold))+1
+        p1_bit,p1_gold=max(p1_bit)/test_VaR_bit[len(test_VaR_bit)-1]-1,max(p1_gold)/test_VaR_gold[len(test_VaR_gold)-1]-1
+        
+        # VaR的p2分数
+        p2_bit=VaR(test_VaR_bit,alpha=0.5)/test_VaR_bit[len(test_VaR_bit)-1]*days_bit
+        p2_gold=VaR(test_VaR_gold,alpha=0.5)/test_VaR_gold[len(test_VaR_gold)-1]*days_gold
 
-# #获得每一天的预测结果
-# testPredict = model.predict(testX)
-# testPredict = scaler.inverse_transform(testPredict).tolist()
-# value=dataset[:len(dataset)-len(testPredict)]
-# value=scaler.inverse_transform(value).tolist()
-# value=value+testPredict
+        f_bit=alpha*p1_bit+(1-alpha)*p2_bit-z_bit
+        f_gold=alpha*p1_gold+(1-alpha)*p2_gold-z_gold
+        is_buy_gold=status[0]*0.99>test_VaR_gold[len(test_VaR_gold)-1]
+        if f_bit<0 and f_gold<0:
+            f_bit,f_gold=f_bit+1,f_gold+1
+            continue
 
-# date=df.iloc[:len(value),0].values.tolist()
+        if f_gold>f_bit and is_buy_gold:
+            buy_list.append('buy gold {}'.format(df_gold.iloc[gold_p,0]))
+            is_gold_buy=True
+            status[1]=int(status[0]*0.99/test_VaR_gold[len(test_VaR_gold)-1])
+            status[0]-=status[1]*test_VaR_gold[len(test_VaR_gold)-1]*1.01
+        elif f_bit>0 or f_bit>f_gold:
+            buy_list.append('buy bit {}'.format(df_bit.iloc[bit_p,0]))
+            is_bit_buy=True
+            status[2]+=status[0]/test_VaR_bit[len(test_VaR_bit)-1]/1.02
+            status[0]=0
+        bit_p+=1
+        gold_p+=1
+        continue
 
-# real_value=scaler.inverse_transform(dataset).tolist()
+print('最终比例是{}'.format(status))
+dic={'交易记录':np.reshape(buy_list,(len(buy_list)))}
+pd.DataFrame(dic).to_csv('../result/交易记录.csv',index=False)
 
-# dic={'Date':np.reshape(date,(len(date))),'predict value':np.reshape(value,(len(value))),
-# 'real value':np.reshape(real_value,(len(real_value))) }
-# # 改
-# pd.DataFrame(dic).to_csv('../result/黄金趋势(30天后).csv',index=False)
-# # pd.DataFrame(dic).to_csv('../result/比特币趋势(30天后).csv',index=False)
-
-
-# var模型获得p2
-data = df.iloc[:,1].values
-# 将整型变为float
-data = data.astype('float32')
-p2=VaR(data,alpha=0.5)/data[len(data)-1]*days
-
-
-
-
-# 投资
+dic={'资产变化':np.reshape(buy_list,(len(buy_list)))}
+pd.DataFrame(dic).to_csv('../result/资产.csv',index=False)
