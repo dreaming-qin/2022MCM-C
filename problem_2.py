@@ -9,7 +9,8 @@ from sklearn.preprocessing import MinMaxScaler
 from problem2_al import downside_risk, get_result_by_state, maximum_drawdown, predict_value_with_exp_smoothing_3
 
 # 获得指标，输入state决定是使用哪个算法，0是LSTM加VAR，1是LSTM，2是VaR,3是三次指数平滑
-# 输出两个值：下行风险和回撤列表。以下行风险,回撤列表的形式返回
+# 输出三个值：利润列表,下行风险和回撤列表。以利润列表,下行风险,回撤列表的形式返回
+# 利润列表是每天获得的利润为n*1的列表
 # 下行风险返回的是一个数值，回撤列表是一个n*1的列表，一个元素表示一个时期的回撤值
 def get_value(state):
     # 投资，得到利润，还有买入卖出的时间点
@@ -21,6 +22,8 @@ def get_value(state):
     is_gold_buy,is_bit_buy=False,False
     # 保证相同时间，一般来说，是黄金比比特币快，需要比特币跟上
     gold_p,bit_p=30,30
+    if state==3:
+        gold_p,bit_p=70,70
     z_gold,z_bit=0.0204,0.0413
     # 模型
     model_gold = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
@@ -59,14 +62,19 @@ def get_value(state):
     # 准备工作完成，开始计算fg,fp
     # 超参数alpha
     alpha=0.6
+    temp=1000
     if state!=0:
         while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
             test_LSTM_bit,test_VaR_bit=data_LSTM_bit[bit_p-time_step:bit_p],data_VaR_bit[bit_p-time_step:bit_p]
-            var1=gold_p if gold_p<time_step+1 else time_step+1
+            var1=gold_p if gold_p<101 else 101
             test_LSTM_gold,test_VaR_gold=data_LSTM_gold[gold_p-var1:gold_p],data_VaR_gold[gold_p-var1:gold_p]
 
             # 计算当前资产
-            money.append(status[0]+0.99*status[1]*test_VaR_gold[len(test_VaR_gold)-1]+0.98*status[2]*test_VaR_bit[len(test_VaR_bit)-1])
+            var1=status[0]+0.99*status[1]*test_VaR_gold[len(test_VaR_gold)-1]+0.98*status[2]*test_VaR_bit[len(test_VaR_bit)-1]
+            money.append(var1)
+            if abs(var1-temp)>=10000:
+                alpha+=-0.05 if var1>temp else 0.05
+                temp=var1
             # 日期
             date.append(df_bit.iloc[bit_p,0])
 
@@ -75,8 +83,8 @@ def get_value(state):
                     bit_p+=1
                     continue
                 # 获得分数f
-                f_bit=get_result_by_state(state,df_bit,predict_days,test_LSTM_bit,test_VaR_bit,model_bit,scaler_bit,z_bit,alpha)
-                f_gold=get_result_by_state(state,df_gold,predict_days,test_LSTM_gold,test_VaR_gold,model_gold,scaler_gold,z_gold,alpha)
+                f_bit=get_result_by_state(state,df_bit,bit_p, predict_days,test_LSTM_bit,test_VaR_bit,model_bit,scaler_bit,z_bit,alpha)
+                f_gold=get_result_by_state(state,df_gold,gold_p,predict_days,test_LSTM_gold,test_VaR_gold,model_gold,scaler_gold,z_gold,alpha)
 
                 if f_bit-f_gold>0 and f_bit>0:
                     is_bit_buy,is_gold_buy,status=investment(1,buy_list,status,test_VaR_gold[len(test_VaR_gold)-1],df_gold.iloc[gold_p,0])
@@ -88,14 +96,14 @@ def get_value(state):
                 continue
 
             if (not is_gold_buy) and is_bit_buy:
-                f_bit=get_result_by_state(state,df_bit,predict_days,test_LSTM_bit,test_VaR_bit,model_bit,scaler_bit,z_bit,alpha)
+                f_bit=get_result_by_state(state,df_bit,bit_p,predict_days,test_LSTM_bit,test_VaR_bit,model_bit,scaler_bit,z_bit,alpha)
                 if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
                     if f_bit<0:
                         is_bit_buy,is_gold_buy,status=investment(3,buy_list,status,test_VaR_bit[len(test_VaR_bit)-1],df_bit.iloc[bit_p,0])
                     bit_p+=1
                     continue
                 # 获得分数f
-                f_gold=get_result_by_state(state,df_gold,predict_days,test_LSTM_gold,test_VaR_gold,model_gold,scaler_gold,z_gold,alpha)
+                f_gold=get_result_by_state(state,df_gold,gold_p,predict_days,test_LSTM_gold,test_VaR_gold,model_gold,scaler_gold,z_gold,alpha)
 
                 is_buy_gold=(status[0]+status[2]*test_VaR_bit[len(test_VaR_bit)-1]*0.98)*0.99>test_VaR_gold[len(test_VaR_gold)-1]
                 if f_gold-f_bit>0 and is_buy_gold and f_gold>0:            
@@ -108,7 +116,7 @@ def get_value(state):
                 continue
 
             if (not is_gold_buy) and (not is_bit_buy):
-                f_bit=get_result_by_state(state,df_bit,predict_days,test_LSTM_bit,test_VaR_bit,model_bit,scaler_bit,z_bit,alpha)
+                f_bit=get_result_by_state(state,df_bit,bit_p,predict_days,test_LSTM_bit,test_VaR_bit,model_bit,scaler_bit,z_bit,alpha)
 
                 if df_bit.iloc[bit_p,0]!=df_gold.iloc[gold_p,0]:
                     if f_bit>0:
@@ -116,7 +124,7 @@ def get_value(state):
                     bit_p+=1
                     continue
                 # 获得分数f
-                f_gold=get_result_by_state(state,df_gold,predict_days,test_LSTM_gold,test_VaR_gold,model_gold,scaler_gold,z_gold,alpha)
+                f_gold=get_result_by_state(state,df_gold,gold_p,predict_days,test_LSTM_gold,test_VaR_gold,model_gold,scaler_gold,z_gold,alpha)
 
                 is_buy_gold=status[0]*0.99>test_VaR_gold[len(test_VaR_gold)-1]
                 if f_bit<0 and f_gold<0:
@@ -132,7 +140,7 @@ def get_value(state):
                 gold_p+=1
                 continue
     else:
-        df_money=pd.read_csv('../result/资产(beta=0.6)maxdong', engine='python', skipfooter=3)
+        df_money=pd.read_csv('../result/problem1_max+dong/资产(beta=0.6)maxdong.csv', engine='python', skipfooter=3)
         money=df_money.iloc[:,0].values.tolist()
 
     # 先算回撤值
@@ -143,13 +151,18 @@ def get_value(state):
     downside_r=downside_risk(df_bit.iloc[:,1].values,
                                 df_gold.iloc[:,1].values,
                                 np.array(money))
-    return downside_r,drawdown
+    return money,downside_r,drawdown
 
 
 int_to_method_dict={0:'LSTM+VaR',1:'LSTM',2:'VaR',3:'smoothing3'}
-for i in range(4):
-    down_risk,max_drawdown=get_value(i)
-    max_drawdown.insert(0,down_risk)
+for i in range(1,4):
+    money,down_risk,max_drawdown=get_value(i)
     dic={'value':np.reshape(max_drawdown,(len(max_drawdown)))}
-    pd.DataFrame(dic).to_csv('../result/{}指标.csv'.format(int_to_method_dict[i])
+    pd.DataFrame(dic).to_csv('../result/{}回撤.csv'.format(int_to_method_dict[i])
+                            ,index=False)
+    dic={'value':np.reshape(money,(len(money)))}
+    pd.DataFrame(dic).to_csv('../result/{}利润.csv'.format(int_to_method_dict[i])
+                            ,index=False)
+    dic={'value':[down_risk]}
+    pd.DataFrame(dic).to_csv('../result/{}下行风险.csv'.format(int_to_method_dict[i])
                             ,index=False)
