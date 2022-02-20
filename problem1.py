@@ -7,13 +7,13 @@ from keras.models import Sequential, load_model
 from sklearn.preprocessing import MinMaxScaler
 
 
-for aaa in range(11):
+for aaa in range(3,11):
     alpha=aaa/10
     # 投资，得到利润，还有买入卖出的时间点
     # 以30天为一个周期，从第30天开始
     time_step=30
     # 预测15天
-    predict_days=15
+    predict_days=7
     # 在第三种状态
     is_gold_buy,is_bit_buy=False,False
     # 保证相同时间，一般来说，是黄金比比特币快，需要比特币跟上

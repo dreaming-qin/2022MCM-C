@@ -7,7 +7,7 @@ from keras.models import Sequential, load_model
 from sklearn.preprocessing import MinMaxScaler
 
 
-for aaa in range(11):
+for aaa in range(3,11):
     alpha=aaa/10
     # if __name__ =='__main__':
     # 投资，得到利润，还有买入卖出的时间点
@@ -55,7 +55,7 @@ for aaa in range(11):
 
     # 准备工作完成，开始计算fg,fp
     # 超参数alpha
-    alpha=0.6
+    # alpha=0.6
     temp=1000
     while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         test_LSTM_bit,test_VaR_bit=data_LSTM_bit[bit_p-30:bit_p],data_VaR_bit[bit_p-30:bit_p]
