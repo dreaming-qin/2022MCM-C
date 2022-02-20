@@ -1,3 +1,4 @@
+from numpy import append
 from torch import le
 import numpy as np
 import math
@@ -28,11 +29,9 @@ def downside_risk(data_bit,data_gold,money,alpha=0.8):
 # 最大回撤，输入是资金序列，形状是n*1的array，滑动窗口大小和滑动窗口移动速度
 # 输出是平均回撤值，是n*1的list
 # 回测值越小越好
-def maximum_drawdown(money,windown_size=100,step=15):
-    index=int((len(money)-windown_size)/step)+2
-    drawdown=[0 for i in range(index)]
+def maximum_drawdown(money,windown_size=80,step=30):
+    drawdown=[]
     point=[0,int(windown_size/2),windown_size]
-    index=0
     flag=True
     while flag:
         if point[2]>len(money):
@@ -40,9 +39,8 @@ def maximum_drawdown(money,windown_size=100,step=15):
             flag=False
         max_=max(money[point[0]:point[1]])
         min_=min(money[point[1]:point[2]])
-        drawdown[index]=(max_-min_)/max_
-        index+=1
-        point=np.add(point,15)
+        drawdown.append((max_-min_)/max_)
+        point=np.add(point,step)
     return drawdown
     
 # 累乘式的三次指数平滑
@@ -71,7 +69,7 @@ def predict_by_LSTM(LSTM_data,VaR_data,model,scaler,predict_days=15):
     return p1_bit[0]
 
 def predict_by_VaR(VaR_data,predict_days=15):
-    p2_bit=VaR(VaR_data,c=0.5)/VaR_data[len(VaR_data)-1]*predict_days
+    p2_bit=VaR(VaR_data,c=0.4)/VaR_data[len(VaR_data)-1]*predict_days
     return p2_bit
 
 # 0是LSTM加VAR，1是LSTM，2是VaR,3是三次指数平滑，

@@ -8,11 +8,11 @@ from sklearn.preprocessing import MinMaxScaler
 
 from problem2_al import downside_risk, get_result_by_state, maximum_drawdown, predict_value_with_exp_smoothing_3
 
-# 获得指标，输入state决定是使用哪个算法，0是LSTM加VAR，1是LSTM，2是VaR,3是三次指数平滑
-# 输出三个值：利润列表,下行风险和回撤列表。以利润列表,下行风险,回撤列表的形式返回
-# 利润列表是每天获得的利润为n*1的列表
-# 下行风险返回的是一个数值，回撤列表是一个n*1的列表，一个元素表示一个时期的回撤值
-def get_value(state):
+li=[3,4,5,6,7]
+state=1
+for aaa in li:
+    alpha=aaa/10
+    print(alpha)
     # 投资，得到利润，还有买入卖出的时间点
     # 以30天为一个周期，从第30天开始
     time_step=30
@@ -57,13 +57,11 @@ def get_value(state):
     data_VaR_gold,data_VaR_bit = df_gold.iloc[:,1].values,df_bit.iloc[:,1].values
     data_VaR_gold,data_VaR_bit = data_VaR_gold.astype('float32'),data_VaR_bit.astype('float32')
 
-    #让alpha从0到1的模板 
-
     # 准备工作完成，开始计算fg,fp
     # 超参数alpha
-    alpha=0.6
+    # alpha=0.6
     temp=1000
-    if state==2 or state==3:
+    if state!=0:
         while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
             test_LSTM_bit,test_VaR_bit=data_LSTM_bit[bit_p-time_step:bit_p],data_VaR_bit[bit_p-time_step:bit_p]
             var1=gold_p if gold_p<101 else 101
@@ -142,30 +140,19 @@ def get_value(state):
     elif state==0:
         df_money=pd.read_csv('../result/problem1_max+dong/资产(beta=0.6)maxdong.csv', engine='python', skipfooter=3)
         money=df_money.iloc[:,0].values.tolist()
-    elif state==1:
-        df_money=pd.read_csv('../result/problem2_LSTM/LSTM利润.csv', engine='python', skipfooter=3)
-        money=df_money.iloc[:,0].values.tolist()
 
     # 先算回撤值
     drawdown=maximum_drawdown(np.array(money))
 
     # 然后算下行风险
-
     downside_r=downside_risk(df_bit.iloc[:,1].values,
                                 df_gold.iloc[:,1].values,
                                 np.array(money))
-    return money,downside_r,drawdown
 
-
-int_to_method_dict={0:'LSTM+VaR',1:'LSTM',2:'VaR',3:'smoothing3'}
-for i in range(2,3):
-    money,down_risk,max_drawdown=get_value(i)
-    dic={'value':np.reshape(max_drawdown,(len(max_drawdown)))}
-    pd.DataFrame(dic).to_csv('../result/{}回撤.csv'.format(int_to_method_dict[i])
-                            ,index=False)
+    
+    dic={'value':np.reshape(drawdown,(len(drawdown)))}
+    pd.DataFrame(dic).to_csv('../result/灵敏度分析回撤(beta={}).csv'.format(alpha),index=False)
     dic={'value':np.reshape(money,(len(money)))}
-    pd.DataFrame(dic).to_csv('../result/{}利润.csv'.format(int_to_method_dict[i])
-                            ,index=False)
-    dic={'value':[down_risk]}
-    pd.DataFrame(dic).to_csv('../result/{}下行风险.csv'.format(int_to_method_dict[i])
-                            ,index=False)
+    pd.DataFrame(dic).to_csv('../result/灵敏度分析利润(beta={}).csv'.format(alpha),index=False)
+    dic={'value':[downside_r]}
+    pd.DataFrame(dic).to_csv('../result/灵敏度分析下行风险(beta={}).csv'.format(alpha),index=False)
