@@ -20,8 +20,8 @@ for aaa in range(3,11):
     gold_p,bit_p=30,30
     z_gold,z_bit=0.0204,0.0413
     # 模型
-    model_gold = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
-    model_bit = load_model(os.path.join("DATA","LSTM_gold" + ".h5"))
+    model_gold = load_model(os.path.join("DATA","LSTM_gold" + ".h5"))
+    model_bit = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
 
 
     # 三元组状态，现金，黄金，比特币
@@ -57,13 +57,18 @@ for aaa in range(3,11):
     # 准备工作完成，开始计算fg,fp
     # 超参数alpha
     # alpha=0.5
+    temp=1000
     while bit_p<df_bit.shape[0] and gold_p<df_gold.shape[0]:
         test_LSTM_bit,test_VaR_bit=data_LSTM_bit[bit_p-30:bit_p],data_VaR_bit[bit_p-30:bit_p]
         var1=gold_p if gold_p<31 else 31
         test_LSTM_gold,test_VaR_gold=data_LSTM_gold[gold_p-var1:gold_p],data_VaR_gold[gold_p-var1:gold_p]
 
         # 计算当前资产
-        money.append(status[0]+0.99*status[1]*test_VaR_gold[len(test_VaR_gold)-1]+0.98*status[2]*test_VaR_bit[len(test_VaR_bit)-1])
+        var1=status[0]+0.99*status[1]*test_VaR_gold[len(test_VaR_gold)-1]+0.98*status[2]*test_VaR_bit[len(test_VaR_bit)-1]
+        money.append(var1)
+        if abs(var1-temp)>=10000:
+            alpha+=-0.03 if var1>temp else 0.03
+            temp=var1
         # 日期
         date.append(df_bit.iloc[bit_p,0])
 
@@ -131,7 +136,7 @@ for aaa in range(3,11):
 
     print('最终比例是{}'.format(status))
     dic={'record':np.reshape(buy_list,(len(buy_list)))}
-    pd.DataFrame(dic).to_csv('../result/交易记录(beta={}).csv'.format(alpha),index=False)
+    pd.DataFrame(dic).to_csv('../result/交易记录(beta={}).csv'.format(aaa),index=False)
 
     dic={'money':np.reshape(money,(len(money))),'date':np.reshape(date,(len(date)))}
-    pd.DataFrame(dic).to_csv('../result/资产(beta={}).csv'.format(alpha),index=False)
+    pd.DataFrame(dic).to_csv('../result/资产(beta={}).csv'.format(aaa),index=False)

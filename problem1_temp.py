@@ -21,8 +21,8 @@ for aaa in range(3,11):
     gold_p,bit_p=30,30
     z_gold,z_bit=0.0204,0.0413
     # 模型
-    model_gold = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
-    model_bit = load_model(os.path.join("DATA","LSTM_gold" + ".h5"))
+    model_gold = load_model(os.path.join("DATA","LSTM_gold" + ".h5"))
+    model_bit = load_model(os.path.join("DATA","LSTM_bit" + ".h5"))
 
 
     # 三元组状态，现金，黄金，比特币
