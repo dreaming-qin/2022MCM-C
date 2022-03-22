@@ -10,7 +10,7 @@ from problem2_al import downside_risk, get_result_by_state, maximum_drawdown, pr
 
 # 获得指标，输入state决定是使用哪个算法，0是LSTM加VAR，1是LSTM，2是VaR,3是三次指数平滑
 # 输出三个值：利润列表,下行风险和回撤列表。以利润列表,下行风险,回撤列表的形式返回
-# 利润列表是每天获得的利润为n*1的列表
+# 利润列表是每天获得的利润为n*1的列表 
 # 下行风险返回的是一个数值，回撤列表是一个n*1的列表，一个元素表示一个时期的回撤值
 def get_value(state):
     # 投资，得到利润，还有买入卖出的时间点
