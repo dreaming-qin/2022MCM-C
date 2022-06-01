@@ -15,8 +15,6 @@
 
   - 损失函数取均方误差。
 
-    ![2022MCM-C/lstm.png at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/lstm.png)
-
 - 简述VaR思想？
 
   - 假设k时刻的数据分布为D(k)，D(k)可以用 **第k天的预测价格** 和 **第[k-30, k-1]的价格** 相减，得到的一个**排序**的**利润分布**来表示。
@@ -62,8 +60,6 @@
 
   - **滑动窗口机制**，窗口大小80天，滑动步数20天。
 
-    ![2022MCM-C/sliding_window.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/sliding_window.jpg)
-
   - 几个指标：
 
     1. **FAV** (Final Asset Value) 最终利润，越大越好
@@ -75,7 +71,7 @@
        对于比特币也是，得到 EB
 
        然后加权，得到**总预计资产E**，然后求得DR
-       $$
+     $$
        E = \lambda · EG + (1-\lambda)·EB \\
        DR = \sqrt{\frac{\sum min(0, E - M)^2}{n}}
        $$
@@ -86,7 +82,7 @@
        $$
        MD=\frac {M_{min}}{M_{max}}
        $$
-
+  
   ![2022MCM-C/problem_3_MD_FAV.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/problem_3_MD_FAV.jpg)
 
 - 通过实验，探索了交易成本对rho的影响，从而对交易策略和最终利润的影响。
