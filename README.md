@@ -53,6 +53,13 @@
 
     ![2022MCM-C/result_1_new.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/result_1_new.jpg)
 
+  - 对比几个模型：
+
+    1. 三次指数平滑：（待补充）
+    2. LSTM-only：只预测，若能盈利就买卖。
+    3. VaR-only：只看风险，若能盈利就买卖。
+    4. LSTM + VaR：综合。
+
   - **滑动窗口机制**，窗口大小80天，滑动步数20天。
 
     ![2022MCM-C/sliding_window.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/sliding_window.jpg)
@@ -79,13 +86,8 @@
        $$
        MD=\frac {M_{min}}{M_{max}}
        $$
-    
-  - 对比几个模型：
 
-    1. 三次指数平滑：（待补充）
-    2. LSTM-only：只预测，若能盈利就买卖。
-    3. VaR-only：只看风险，若能盈利就买卖。
-    4. LSTM + VaR：综合。
+  ![2022MCM-C/problem_3_MD_FAV.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/problem_3_MD_FAV.jpg)
 
 - 通过实验，探索了交易成本对rho的影响，从而对交易策略和最终利润的影响。
 
