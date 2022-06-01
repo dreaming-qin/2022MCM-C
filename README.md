@@ -1,12 +1,21 @@
 # 2022MCM-C
 **2022年数模美赛C题代码** [[paper](https://github.com/dreaming-qin/2022MCM-C/blob/master/paper.pdf)]
 
+- 整体工作
+
+  ![2022MCM-C/our_work.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/our_work.jpg)
+  
 - 为什么用LSTM，简述结构？
 
   - 序列预测...
+
   - 隐状态 [h, c] ，遗忘门 f ，输入门 i ，输出门o。
+
   - 模型的输出取决于为 上一时刻的隐状态 和 输入x 。
+
   - 损失函数取均方误差。
+
+    ![2022MCM-C/lstm.png at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/lstm.png)
 
 - 简述VaR思想？
 
@@ -42,7 +51,11 @@
 
   - 根据交易策略，获得一个**总资产 M** 的走势曲线。
 
+    ![2022MCM-C/result_1_new.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/result_1_new.jpg)
+
   - **滑动窗口机制**，窗口大小80天，滑动步数20天。
+
+    ![2022MCM-C/sliding_window.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/sliding_window.jpg)
 
   - 几个指标：
 
@@ -68,12 +81,12 @@
        $$
     
   - 对比几个模型：
-  
+
     1. 三次指数平滑：（待补充）
     2. LSTM-only：只预测，若能盈利就买卖。
     3. VaR-only：只看风险，若能盈利就买卖。
     4. LSTM + VaR：综合。
-  
+
 - 通过实验，探索了交易成本对rho的影响，从而对交易策略和最终利润的影响。
 
   
