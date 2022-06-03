@@ -1,9 +1,9 @@
 # 2022MCM-C
-**2022年数模美赛C题代码** [[paper](https://github.com/dreaming-qin/2022MCM-C/blob/master/paper.pdf)]
+**2022年数模美赛C题代码** [[paper](paper.pdf)]
 
 - 整体工作
 
-  ![2022MCM-C/our_work.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/our_work.jpg)
+  ![2022MCM-C/our_work.jpg at master · dreaming-qin/2022MCM-C (github.com)](img/our_work.jpg)
   
 - 为什么用LSTM，简述结构？
 
@@ -18,7 +18,7 @@
 - 简述VaR思想？
 
   - 假设k时刻的数据分布为D(k)，D(k)可以用 **第k天的预测价格** 和 **第[k-30, k-1]的价格** 相减，得到的一个**排序**的**利润分布**来表示。
-  - 假设每个利润宽度为 len ，置信度为 c ，则第 len*(1-c) 天的价格就是 VaR 的值，表示有 c 的概率会赚这么多钱。（待补充）
+  - 假设所取数据宽度为 len ，置信度为 c ，则第 len*(1-c) 天的价格就是 VaR 的值，表示有 c 的概率下一弹会赚取或亏损这么多钱。（待补充）
   - 用 VaR/pk 就是**损失率 LR** 。
 
 - 如何买卖？
@@ -49,7 +49,7 @@
 
   - 根据交易策略，获得一个**总资产 M** 的走势曲线。
 
-    ![2022MCM-C/result_1_new.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/result_1_new.jpg)
+    ![2022MCM-C/result_1_new.jpg at master · dreaming-qin/2022MCM-C (github.com)](img/result_1_new.jpg)
 
   - 对比几个模型：
 
@@ -71,11 +71,11 @@
        对于比特币也是，得到 EB
 
        然后加权，得到**总预计资产E**，然后求得DR
-     $$
+    $$
        E = \lambda · EG + (1-\lambda)·EB \\
        DR = \sqrt{\frac{\sum min(0, E - M)^2}{n}}
-       $$
-       
+    $$
+    
     3. **MD** (Max Drawdown) 最大回撤，越小越好
     
        从窗口中间划分，取得左半侧的最大值Mmax，和右半侧的最小值Mmin
@@ -83,7 +83,7 @@
        MD=\frac {M_{min}}{M_{max}}
        $$
   
-  ![2022MCM-C/problem_3_MD_FAV.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/problem_3_MD_FAV.jpg)
+  ![2022MCM-C/problem_3_MD_FAV.jpg at master · dreaming-qin/2022MCM-C (github.com)](img/problem_3_MD_FAV.jpg)
 
 - 通过实验，探索了交易成本对rho的影响，从而对交易策略和最终利润的影响。
 
@@ -91,4 +91,4 @@
 
 - 灵敏性分析：beta对模型的影响，不稳定性先下降后上升，取0.6最合适。
 
-  ![2022MCM-C/sensitivity.jpg at master · dreaming-qin/2022MCM-C (github.com)](https://github.com/dreaming-qin/2022MCM-C/blob/master/img/sensitivity.jpg)
+  ![2022MCM-C/sensitivity.jpg at master · dreaming-qin/2022MCM-C (github.com)](img/sensitivity.jpg)
